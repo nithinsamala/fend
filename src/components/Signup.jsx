@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
-import "./Signup.css";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Link, useNavigate } from 'react-router-dom';
+import './Signup.css';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -9,16 +9,16 @@ const Signup = ({ onSignupSuccess }) => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: ""
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: ''
   });
 
   const [showPassword, setShowPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState({ type: "", text: "" });
+  const [message, setMessage] = useState({ type: '', text: '' });
 
   /* =========================
      AUTH CHECK
@@ -34,15 +34,15 @@ const Signup = ({ onSignupSuccess }) => {
         );
 
         if (res.data?.isAuthenticated) {
-          navigate("/chat");
+          navigate('/chat');
         }
-      } catch {
-        // normal if not logged in
+      } catch (err) {
+        console.log('Auth check error:', err?.response?.status);
       }
     };
 
     checkIfLoggedIn();
-  }, [API_URL, navigate]);
+  }, [navigate]);
 
   /* =========================
      PASSWORD STRENGTH
@@ -62,48 +62,47 @@ const Signup = ({ onSignupSuccess }) => {
   }, [formData.password]);
 
   /* =========================
-     INPUT CHANGE
+     INPUT HANDLER
   ========================= */
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   /* =========================
-     SUBMIT SIGNUP
+     SUBMIT
   ========================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setMessage({ type: "", text: "" });
+    setMessage({ type: '', text: '' });
 
     try {
       const res = await axios.post(
         `${API_URL}/api/signup`,
-        {
-          email: formData.email,
-          password: formData.password
-        },
+        formData,
         { withCredentials: true }
       );
 
       setMessage({
-        type: "success",
-        text: "Account created successfully! Redirecting..."
+        type: 'success',
+        text: 'Account created successfully! Redirecting...'
       });
 
       if (onSignupSuccess) {
         onSignupSuccess(res.data.user);
       }
 
-      navigate("/chat");
+      // store ONLY user (cookie handles auth)
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+
+      navigate('/chat');
+
     } catch (err) {
+      console.log('Signup error:', err);
       setMessage({
-        type: "error",
-        text: err?.response?.data?.message || "Signup failed"
+        type: 'error',
+        text: err.response?.data?.message || 'Signup failed'
       });
     } finally {
       setIsLoading(false);
@@ -114,111 +113,86 @@ const Signup = ({ onSignupSuccess }) => {
      UI HELPERS
   ========================= */
   const getStrengthColor = () => {
-    if (passwordStrength === 0) return "gray";
-    if (passwordStrength === 1) return "#ef4444";
-    if (passwordStrength === 2) return "#f97316";
-    if (passwordStrength === 3) return "#eab308";
-    return "#22c55e";
+    if (passwordStrength <= 1) return '#ef4444';
+    if (passwordStrength === 2) return '#f97316';
+    if (passwordStrength === 3) return '#eab308';
+    return '#22c55e';
   };
 
   const getStrengthText = () => {
-    const texts = ["", "Very Weak", "Weak", "Medium", "Strong", "Very Strong"];
-    return texts[passwordStrength] || "";
+    return ['', 'Very Weak', 'Weak', 'Medium', 'Strong', 'Very Strong'][passwordStrength];
   };
 
   /* =========================
-     RENDER
+     JSX
   ========================= */
   return (
     <div className="signup-page-container">
       <div className="signup-container">
         <div className="signup-card">
-          <div className="signup-header">
-            <h1 className="signup-title">
-              Create Your <span className="signup-title-highlight">Account</span>
-            </h1>
-            <p className="signup-subtitle">
-              Join us today to get <strong>started</strong>
-            </p>
-          </div>
+
+          <h1>Create Account</h1>
 
           {message.text && (
-            <div
-              className={`signup-message ${
-                message.type === "success" ? "success" : "error"
-              }`}
-            >
+            <div className={`signup-message ${message.type}`}>
               {message.text}
             </div>
           )}
 
-          <form className="signup-form" onSubmit={handleSubmit}>
-            <div className="signup-form-group">
-              <label className="signup-label"><strong>Email</strong></label>
-              <div className="signup-input-container">
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  className="signup-input"
-                  placeholder="your@email.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
+          <form onSubmit={handleSubmit}>
 
-            <div className="signup-form-group">
-              <label className="signup-label"><strong>Password</strong></label>
-              <div className="signup-input-container">
-                <input
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  className="signup-input"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  className="signup-password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
-                >
-                  {showPassword ? "👁️‍🗨️" : "👁️"}
-                </button>
-              </div>
+            <input
+              name="firstName"
+              placeholder="First Name"
+              value={formData.firstName}
+              onChange={handleChange}
+              required
+            />
 
-              <div className="password-strength-container">
-                <div className="password-strength-header">
-                  <span>Password Strength</span>
-                  <span style={{ color: getStrengthColor() }}>
-                    {getStrengthText()}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <input
+              name="lastName"
+              placeholder="Last Name"
+              value={formData.lastName}
+              onChange={handleChange}
+              required
+            />
 
-            <button
-              type="submit"
-              className={`signup-submit-btn ${isLoading ? "loading" : ""}`}
-              disabled={isLoading}
-            >
-              {isLoading ? "Creating..." : "Create Account"}
+            <input
+              name="email"
+              type="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+
+            <input
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+
+            <button type="button" onClick={() => setShowPassword(!showPassword)}>
+              {showPassword ? 'Hide' : 'Show'}
             </button>
+
+            <div style={{ color: getStrengthColor() }}>
+              Password Strength: {getStrengthText()}
+            </div>
+
+            <button type="submit" disabled={isLoading}>
+              {isLoading ? 'Creating...' : 'Create Account'}
+            </button>
+
           </form>
 
-          <div className="signup-footer">
-            <p>
-              Already have an account?{" "}
-              <Link to="/login" className="signup-login-link">
-                <strong>Sign in</strong>
-              </Link>
-            </p>
-          </div>
+          <p>
+            Already have an account? <Link to="/login">Login</Link>
+          </p>
+
         </div>
       </div>
     </div>
