@@ -131,11 +131,10 @@ const generateAIResponse = async (userInput) => {
     fileInputRef.current?.click();
   };
   
- const handleFileChange = async (e) => {
+const handleFileChange = async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  // 1️⃣ Show file message in UI (KEEP YOUR EXISTING LOGIC)
   const fileMessage = {
     id: Date.now().toString(),
     text: `📎 Attached file: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
@@ -150,46 +149,45 @@ const generateAIResponse = async (userInput) => {
   setIsTyping(true);
 
   try {
-    // 2️⃣ ACTUAL FILE UPLOAD TO BACKEND
     const formData = new FormData();
-    formData.append("file", file); // ⚠️ MUST be "file"
+    formData.append("file", file); // MUST be "file"
 
     const res = await axios.post(
-      `${API_URL}/api/uploads/upload`,
-
+      `${API_URL}/api/uploads`, // ✅ FIXED URL
       formData,
-      { withCredentials: true } // ⚠️ REQUIRED FOR COOKIE AUTH
+      {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      }
     );
 
-    // 3️⃣ Show success response
     setTimeout(() => {
-      const response = {
+      setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
-        text: `✅ File "${file.name}" uploaded successfully. I can now analyze it.`,
+        text: `✅ File "${file.name}" uploaded successfully. You can now ask questions.`,
         sender: 'assistant',
         timestamp: getCurrentTime(),
-      };
-
-      setMessages(prev => [...prev, response]);
+      }]);
       setIsTyping(false);
-    }, 1000);
+    }, 800);
 
   } catch (error) {
     console.error("Upload failed:", error);
 
-    setTimeout(() => {
-      const errorMsg = {
-        id: (Date.now() + 1).toString(),
-        text: "❌ File upload failed. Please try again.",
-        sender: 'assistant',
-        timestamp: getCurrentTime(),
-      };
-
-      setMessages(prev => [...prev, errorMsg]);
-      setIsTyping(false);
-    }, 1000);
+    setMessages(prev => [...prev, {
+      id: (Date.now() + 1).toString(),
+      text: "❌ File upload failed. Please try again.",
+      sender: 'assistant',
+      timestamp: getCurrentTime(),
+    }]);
+    setIsTyping(false);
   }
 };
+
+      
+
 
   
   // Handle voice recording
